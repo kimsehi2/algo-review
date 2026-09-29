@@ -7,6 +7,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js"></script>
+<script>
+  // 저장된 테마가 있으면 그걸, 없으면 시스템 설정을 따름 (화면 깜빡임 방지용으로 먼저 실행)
+  (function () {
+    var t = null; try { t = localStorage.getItem('algo-theme'); } catch (e) {}
+    if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
 <style>
 :root {
   --paper: #F6F8FB;
@@ -24,12 +39,18 @@
   --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --mono: "JetBrains Mono", "D2Coding", Consolas, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #141A26; --sheet: #1B2231; --ink: #E4E9F2; --ink-soft: #97A3B9;
-    --grid: #252E40; --line: #34405A; --marker: #E8CB3A; --marker-soft: #4A4220;
-    --redpen: #F0776F; --ok: #5CC495; --code-bg: #161C29; --focus: #7FA6FF;
-  }
+:root {
+  --tk-keyword: #7A3EC8; --tk-def: #0E62C4; --tk-builtin: #1768C2; --tk-string: #1F7F52;
+  --tk-number: #B85A00; --tk-comment: #8A94A6; --tk-meta: #B0456E; --tk-sel: #D7E4FA; --tk-active: #F1F5FB;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #141A26; --sheet: #1B2231; --ink: #E4E9F2; --ink-soft: #97A3B9;
+  --grid: #252E40; --line: #34405A; --marker: #E8CB3A; --marker-soft: #4A4220;
+  --redpen: #F0776F; --ok: #5CC495; --code-bg: #161C29; --focus: #7FA6FF;
+  --tk-keyword: #C792EA; --tk-def: #82AAFF; --tk-builtin: #7FC8F8; --tk-string: #C3E88D;
+  --tk-number: #F78C6C; --tk-comment: #6B7489; --tk-meta: #F07178; --tk-sel: #2E3A55; --tk-active: #1E2638;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -134,6 +155,32 @@ h3 { font-size: 15px; margin: 14px 0 4px; }
 .py-status.ready .lamp { background: var(--ok); }
 .py-status.loading .lamp { background: var(--marker); }
 .py-status.error .lamp { background: var(--redpen); }
+#editor-host .CodeMirror {
+  height: auto; font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+  background: var(--code-bg); color: var(--ink); border-radius: 8px;
+}
+#editor-host .CodeMirror-scroll { min-height: 340px; max-height: 70vh; }
+#editor-host .CodeMirror-gutters { background: var(--code-bg); border-right: 1px solid var(--grid); }
+#editor-host .CodeMirror-linenumber { color: var(--ink-soft); opacity: .6; padding: 0 8px 0 6px; }
+#editor-host .CodeMirror-cursor { border-left: 2px solid var(--ink); }
+#editor-host .CodeMirror-selected, #editor-host .CodeMirror-focused .CodeMirror-selected { background: var(--tk-sel); }
+#editor-host .CodeMirror-line::selection, #editor-host .CodeMirror-line > span::selection, #editor-host .CodeMirror-line > span > span::selection { background: var(--tk-sel); }
+#editor-host .CodeMirror-activeline-background { background: var(--tk-active); }
+#editor-host .CodeMirror-matchingbracket { color: var(--ok) !important; font-weight: 700; text-decoration: underline; }
+#editor-host .CodeMirror-placeholder { color: var(--ink-soft) !important; opacity: .7; }
+#editor-host .CodeMirror-focused { outline: 2px solid var(--focus); outline-offset: 1px; }
+.cm-s-default .cm-keyword { color: var(--tk-keyword); font-weight: 500; }
+.cm-s-default .cm-def { color: var(--tk-def); font-weight: 600; }
+.cm-s-default .cm-builtin { color: var(--tk-builtin); }
+.cm-s-default .cm-string, .cm-s-default .cm-string-2 { color: var(--tk-string); }
+.cm-s-default .cm-number { color: var(--tk-number); }
+.cm-s-default .cm-comment { color: var(--tk-comment); font-style: italic; }
+.cm-s-default .cm-meta { color: var(--tk-meta); }
+.cm-s-default .cm-variable, .cm-s-default .cm-variable-2, .cm-s-default .cm-property,
+.cm-s-default .cm-operator, .cm-s-default .cm-punctuation { color: var(--ink); }
+.cm-s-default .cm-atom { color: var(--tk-number); }
+.cm-s-default .cm-error { color: var(--redpen); }
+.theme-btn { border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .editor-wrap { display: flex; border: 1px solid var(--line); border-radius: 8px; background: var(--code-bg); overflow: hidden; }
 .gutter {
   font-family: var(--mono); font-size: 13.5px; line-height: 1.6; padding: 10px 8px 10px 10px; text-align: right;
@@ -225,6 +272,7 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
     <h1><span>알고리즘 오답노트</span></h1>
     <p>틀린 문제를 모아 두고, 랜덤으로 다시 풀어 보세요.</p>
   </div>
+  <button class="theme-btn" id="btn-theme" type="button"></button>
   <div class="account" id="account" hidden>
     <span class="sync" id="sync"><span class="lamp"></span><span class="txt">동기화됨</span></span>
     <span id="user-email"></span>
@@ -394,7 +442,7 @@ function showView(name) {
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === name ? 'true' : 'false'));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
   if (name === 'list') renderList();
-  if (name === 'review') renderStats();
+  if (name === 'review') { renderStats(); if (cm) setTimeout(() => cm.refresh(), 0); }
 }
 document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
   if (b.dataset.view === 'add' && editingId) resetForm();
@@ -516,6 +564,7 @@ const Py = {
 /* ============ Review ============ */
 let current = null;
 let running = false;
+let cm = null;
 
 function renderStats() {
   const today = todayStr();
@@ -598,10 +647,7 @@ function renderReview() {
           <button class="btn small primary" id="btn-judge" ${tcs.length ? '' : 'disabled title="저장된 테스트 케이스가 없어요"'}>테스트 ${tcs.length}개 채점</button>
         </div>
       </div>
-      <div class="editor-wrap">
-        <div class="gutter" id="gutter" aria-hidden="true">1</div>
-        <textarea class="code" id="editor" spellcheck="false" aria-label="Python 코드 편집기" placeholder="# 기억을 더듬어 다시 풀어 보세요&#10;import sys&#10;input = sys.stdin.readline&#10;">${esc(code)}</textarea>
-      </div>
+      <div id="editor-host"></div>
       <p class="muted" style="margin:6px 0 0;font-size:12.5px"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 실행 · <kbd>Tab</kbd> 들여쓰기 · <kbd>Shift</kbd>+<kbd>Tab</kbd> 내어쓰기 · 작성 중인 코드는 자동 저장돼요</p>
       <div class="io-grid">
         <div><label for="stdin">입력 (stdin)</label><textarea class="io" id="stdin" spellcheck="false">${esc(tcs[0]?.input ?? '')}</textarea></div>
@@ -611,18 +657,29 @@ function renderReview() {
     </section>
   </div>`;
   Py.refreshStatus();
-  bindEditor($('#editor'), $('#gutter'));
-  $('#editor').addEventListener('input', () => { drafts[p.id] = $('#editor').value; saveDrafts(); });
+  cm = CodeMirror($('#editor-host'), {
+    value: code, mode: 'python', theme: 'default',
+    lineNumbers: true, indentUnit: 4, tabSize: 4, indentWithTabs: false,
+    matchBrackets: true, autoCloseBrackets: true, styleActiveLine: true, viewportMargin: Infinity,
+    placeholder: '# 기억을 더듬어 다시 풀어 보세요\nimport sys\ninput = sys.stdin.readline',
+    extraKeys: {
+      'Tab': c => c.somethingSelected() ? c.indentSelection('add') : c.replaceSelection('    ', 'end'),
+      'Shift-Tab': c => c.indentSelection('subtract'),
+      'Ctrl-Enter': () => runOnce(), 'Cmd-Enter': () => runOnce()
+    }
+  });
+  cm.getInputField().setAttribute('aria-label', 'Python 코드 편집기');
+  cm.on('change', () => { drafts[p.id] = cm.getValue(); saveDrafts(); });
   $('#btn-run').onclick = runOnce;
   $('#btn-judge').onclick = judge;
-  $('#btn-clear').onclick = () => { if (!$('#editor').value || confirm('작성한 코드를 지울까요?')) { $('#editor').value = ''; drafts[p.id] = ''; saveDrafts(); updateGutter($('#editor'), $('#gutter')); } };
+  $('#btn-clear').onclick = () => { if (!cm.getValue() || confirm('작성한 코드를 지울까요?')) { cm.setValue(''); cm.focus(); } };
   $('#btn-ok').onclick = () => grade('ok');
   $('#btn-fail').onclick = () => grade('fail');
   $('#btn-edit-cur').onclick = () => startEdit(p.id);
   const ls = $('#btn-load-solution');
   if (ls) ls.onclick = () => {
-    if ($('#editor').value.trim() && !confirm('편집기의 코드를 정답 코드로 바꿀까요?')) return;
-    $('#editor').value = p.solution; drafts[p.id] = p.solution; saveDrafts(); updateGutter($('#editor'), $('#gutter'));
+    if (cm.getValue().trim() && !confirm('편집기의 코드를 정답 코드로 바꿀까요?')) return;
+    cm.setValue(p.solution);
   };
 }
 
@@ -638,7 +695,7 @@ async function runOnce() {
   const out = $('#stdout');
   running = true; updateRunButtons(); out.textContent = '실행 중…';
   try {
-    const [r] = await Py.run($('#editor').value, [$('#stdin').value]);
+    const [r] = await Py.run(cm.getValue(), [$('#stdin').value]);
     out.innerHTML = esc(r.out) + (r.err ? `<span class="err">${esc(r.err)}</span>` : '') +
       `\n<span style="opacity:.6">— ${(r.time * 1000).toFixed(0)}ms</span>`;
   } catch (e) {
@@ -652,7 +709,7 @@ async function judge() {
   const box = $('#tc-results');
   running = true; updateRunButtons(); box.innerHTML = '<div class="muted">채점 중…</div>';
   try {
-    const results = await Py.run($('#editor').value, tcs.map(t => t.input));
+    const results = await Py.run(cm.getValue(), tcs.map(t => t.input));
     let pass = 0;
     box.innerHTML = results.map((r, i) => {
       const ok = !r.err && normalizeOut(r.out) === normalizeOut(tcs[i].output);
@@ -834,6 +891,22 @@ $('#list-body').addEventListener('click', e => {
 
 /* ============ Boot ============ */
 $('#btn-draw').onclick = draw;
+function paintThemeBtn() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  $('#btn-theme').textContent = dark ? '☀️ 라이트 모드' : '🌙 다크 모드';
+  $('#btn-theme').setAttribute('aria-label', dark ? '라이트 모드로 바꾸기' : '다크 모드로 바꾸기');
+}
+$('#btn-theme').onclick = () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('algo-theme', next); } catch {}
+  paintThemeBtn(); if (cm) cm.refresh();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  let saved = null; try { saved = localStorage.getItem('algo-theme'); } catch {}
+  if (!saved) { document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light'); paintThemeBtn(); }
+});
+paintThemeBtn();
 window.showView = showView;
 resetForm();
 
