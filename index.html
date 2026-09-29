@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>알고리즘 오답노트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F6F8FB;
+  --sheet: #FFFFFF;
+  --ink: #1E2A44;
+  --ink-soft: #5A6781;
+  --grid: #DDE5EF;
+  --line: #C9D3E0;
+  --marker: #FFE45C;
+  --marker-soft: #FFF4B0;
+  --redpen: #CF3F37;
+  --ok: #23845A;
+  --code-bg: #FBFCFE;
+  --focus: #2F6FEB;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "D2Coding", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141A26; --sheet: #1B2231; --ink: #E4E9F2; --ink-soft: #97A3B9;
+    --grid: #252E40; --line: #34405A; --marker: #E8CB3A; --marker-soft: #4A4220;
+    --redpen: #F0776F; --ok: #5CC495; --code-bg: #161C29; --focus: #7FA6FF;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* header */
+header {
+  display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  max-width: 1280px; margin: 0 auto; padding: 28px 24px 12px;
+}
+.brand h1 {
+  margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
+}
+.brand h1 span {
+  background: linear-gradient(transparent 58%, var(--marker) 58%, var(--marker) 92%, transparent 92%);
+  padding: 0 2px;
+}
+.brand p { margin: 4px 0 0; color: var(--ink-soft); font-size: 14px; }
+nav { display: flex; gap: 4px; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+nav button {
+  border: 0; background: transparent; padding: 7px 16px; border-radius: 7px; cursor: pointer; font-weight: 500; color: var(--ink-soft);
+}
+nav button[aria-selected="true"] { background: var(--ink); color: var(--sheet); }
+
+main { max-width: 1280px; margin: 0 auto; padding: 8px 24px 48px; }
+.view { display: none; }
+.view.active { display: block; }
+
+.sheet {
+  background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px;
+}
+.stats { display: flex; gap: 28px; flex-wrap: wrap; margin: 4px 0 16px; color: var(--ink-soft); font-size: 14px; }
+.stats b { color: var(--ink); font-size: 20px; font-weight: 700; margin-right: 4px; }
+
+/* buttons */
+.btn {
+  border: 1px solid var(--line); background: var(--sheet); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { border-color: var(--ink-soft); }
+.btn.primary { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.btn.ok { color: var(--ok); border-color: var(--ok); }
+.btn.bad { color: var(--redpen); border-color: var(--redpen); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* draw bar */
+.drawbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.draw-btn {
+  font-size: 17px; font-weight: 700; padding: 12px 22px; border-radius: 10px; border: 2px solid var(--ink);
+  background: var(--marker); color: #1E2A44; cursor: pointer;
+}
+.draw-btn:active { transform: translateY(1px); }
+label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--ink-soft); cursor: pointer; }
+select.mode { border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; padding: 7px 10px; }
+
+/* review layout */
+.review-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .review-grid { grid-template-columns: 1fr; } }
+.problem-title { font-size: 22px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; line-height: 1.35; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; font-size: 13px; }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; color: var(--ink-soft); }
+.chip.diff { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+.meta a { color: var(--focus); }
+.desc { white-space: pre-wrap; word-break: break-word; margin: 0 0 16px; }
+.muted { color: var(--ink-soft); font-size: 14px; }
+.history { font-size: 13px; color: var(--ink-soft); margin-top: 12px; display: flex; gap: 3px; flex-wrap: wrap; align-items: center; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.ok { background: var(--ok); }
+.dot.fail { background: var(--redpen); }
+
+details.reveal { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
+details.reveal summary { cursor: pointer; font-weight: 600; }
+.note-red { border-left: 3px solid var(--redpen); padding: 6px 12px; margin: 10px 0; white-space: pre-wrap; background: color-mix(in srgb, var(--redpen) 7%, transparent); border-radius: 0 6px 6px 0; }
+pre.code {
+  font-family: var(--mono); font-size: 13px; background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 6px 0 12px; white-space: pre; line-height: 1.55;
+}
+h3 { font-size: 15px; margin: 14px 0 4px; }
+
+/* editor */
+.editor-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.py-status { font-size: 13px; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; }
+.py-status .lamp { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.py-status.ready .lamp { background: var(--ok); }
+.py-status.loading .lamp { background: var(--marker); }
+.py-status.error .lamp { background: var(--redpen); }
+.editor-wrap { display: flex; border: 1px solid var(--line); border-radius: 8px; background: var(--code-bg); overflow: hidden; }
+.gutter {
+  font-family: var(--mono); font-size: 13.5px; line-height: 1.6; padding: 10px 8px 10px 10px; text-align: right;
+  color: var(--ink-soft); opacity: .6; user-select: none; white-space: pre; min-width: 38px; border-right: 1px solid var(--grid); overflow: hidden;
+}
+textarea.code {
+  flex: 1; border: 0; background: transparent; resize: vertical; font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+  padding: 10px 12px; min-height: 320px; tab-size: 4; white-space: pre; overflow-x: auto; outline: none;
+}
+.io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+@media (max-width: 600px) { .io-grid { grid-template-columns: 1fr; } }
+.io-grid label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
+textarea.io, pre.out {
+  width: 100%; font-family: var(--mono); font-size: 13px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--code-bg); padding: 8px 10px; min-height: 110px; margin: 0; resize: vertical; white-space: pre-wrap; word-break: break-all;
+}
+pre.out { overflow: auto; max-height: 260px; }
+pre.out .err { color: var(--redpen); }
+.tc-results { margin-top: 10px; display: grid; gap: 6px; }
+.tc { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+.tc.pass { border-left: 4px solid var(--ok); }
+.tc.fail { border-left: 4px solid var(--redpen); }
+.tc summary { cursor: pointer; }
+.tc .cmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+@media (max-width: 600px) { .tc .cmp { grid-template-columns: 1fr; } }
+.tc .cmp div b { font-size: 12px; display: block; color: var(--ink-soft); }
+.tc .cmp pre { font-family: var(--mono); font-size: 12px; margin: 2px 0 0; background: var(--code-bg); border: 1px solid var(--grid); border-radius: 6px; padding: 6px; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow: auto; }
+
+.grade { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.grade p { margin: 0 0 8px; font-weight: 600; }
+
+.empty { text-align: center; padding: 56px 20px; }
+.empty h2 { margin: 0 0 6px; font-size: 20px; }
+.empty p { color: var(--ink-soft); margin: 0 0 16px; }
+
+/* form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+@media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+.full { grid-column: 1 / -1; }
+.field label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.field .hint { font-weight: 400; color: var(--ink-soft); font-size: 13px; margin-left: 4px; }
+.field input, .field select, .field textarea {
+  width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); padding: 8px 10px;
+}
+.field textarea { min-height: 90px; resize: vertical; }
+.field textarea.mono { font-family: var(--mono); font-size: 13px; min-height: 160px; tab-size: 4; white-space: pre; }
+.tc-edit { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start; }
+.tc-edit textarea { font-family: var(--mono); font-size: 13px; min-height: 70px; }
+@media (max-width: 600px) { .tc-edit { grid-template-columns: 1fr; } }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+/* list */
+.list-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.list-tools input[type=search] { flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--sheet); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-size: 13px; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
+td.title-cell { font-weight: 600; }
+td.title-cell button { all: unset; cursor: pointer; }
+td.title-cell button:hover { text-decoration: underline; }
+td.title-cell button:focus-visible { outline: 2px solid var(--focus); }
+.rate { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.backup { margin-top: 20px; font-size: 14px; color: var(--ink-soft); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
+  background: var(--ink); color: var(--sheet); padding: 10px 18px; border-radius: 8px; font-size: 14px; transition: all .2s; pointer-events: none; z-index: 10;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.account { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-soft); }
+.account[hidden], nav[hidden], main[hidden] { display: none; }
+.sync { display: inline-flex; align-items: center; gap: 5px; }
+.sync .lamp { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.sync.pending .lamp { background: var(--marker); }
+.sync.offline .lamp { background: var(--redpen); }
+.gate { max-width: 460px; margin: 60px auto; text-align: center; }
+.gate h2 { margin: 0 0 8px; font-size: 22px; }
+.gate p { color: var(--ink-soft); margin: 0 0 20px; }
+.gate .g-btn { font-size: 16px; padding: 11px 22px; }
+.gate pre { text-align: left; font-family: var(--mono); font-size: 12.5px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; }
+kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; background: var(--code-bg); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1><span>알고리즘 오답노트</span></h1>
+    <p>틀린 문제를 모아 두고, 랜덤으로 다시 풀어 보세요.</p>
+  </div>
+  <div class="account" id="account" hidden>
+    <span class="sync" id="sync"><span class="lamp"></span><span class="txt">동기화됨</span></span>
+    <span id="user-email"></span>
+    <button class="btn small" id="btn-logout">로그아웃</button>
+  </div>
+  <nav role="tablist" aria-label="화면 전환" hidden>
+    <button role="tab" data-view="review" aria-selected="true">복습</button>
+    <button role="tab" data-view="add" aria-selected="false" id="tab-add">문제 추가</button>
+    <button role="tab" data-view="list" aria-selected="false">문제 목록</button>
+  </nav>
+</header>
+
+<section class="sheet gate" id="gate">
+  <h2 id="gate-title">로그인하고 오답노트 열기</h2>
+  <p id="gate-text">Google 계정으로 로그인하면 어느 컴퓨터에서든 같은 기록을 볼 수 있어요.</p>
+  <div id="gate-extra"></div>
+  <button class="btn primary g-btn" id="btn-login" hidden>Google로 로그인</button>
+</section>
+
+<main hidden>
+  <!-- REVIEW -->
+  <section class="view active" id="view-review">
+    <div class="stats" id="stats"></div>
+    <div class="drawbar">
+      <div class="row">
+        <button class="draw-btn" id="btn-draw">문제 뽑기</button>
+        <select class="mode" id="draw-mode" aria-label="뽑는 방식">
+          <option value="smart">약한 문제 우선</option>
+          <option value="random">완전 랜덤</option>
+        </select>
+        <label class="check"><input type="checkbox" id="skip-today" checked> 오늘 복습한 문제 제외</label>
+      </div>
+      <input id="tag-filter" list="tag-options" placeholder="태그로 좁히기 (예: DP)" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--sheet);min-width:200px">
+      <datalist id="tag-options"></datalist>
+    </div>
+    <div id="review-area"></div>
+  </section>
+
+  <!-- ADD / EDIT -->
+  <section class="view" id="view-add">
+    <div class="sheet">
+      <h2 style="margin:0 0 16px;font-size:20px" id="form-heading">틀린 문제 추가</h2>
+      <form id="problem-form" autocomplete="off">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="f-title">문제 이름</label>
+            <input id="f-title" required placeholder="예: 백준 1932 정수 삼각형">
+          </div>
+          <div class="field">
+            <label for="f-url">문제 링크 <span class="hint">선택</span></label>
+            <input id="f-url" type="url" placeholder="https://www.acmicpc.net/problem/1932">
+          </div>
+          <div class="field">
+            <label for="f-diff">난이도 <span class="hint">선택</span></label>
+            <input id="f-diff" list="diff-options" placeholder="예: 실버 1, Lv.2, Medium">
+            <datalist id="diff-options">
+              <option value="브론즈"><option value="실버"><option value="골드"><option value="플래티넘">
+              <option value="Lv.1"><option value="Lv.2"><option value="Lv.3"><option value="Lv.4">
+              <option value="D3"><option value="D4"><option value="Easy"><option value="Medium"><option value="Hard">
+            </datalist>
+          </div>
+          <div class="field full">
+            <label for="f-tags">태그 <span class="hint">쉼표로 구분</span></label>
+            <input id="f-tags" placeholder="DP, 그리디, BFS">
+          </div>
+          <div class="field full">
+            <label for="f-desc">문제 요약 <span class="hint">복습할 때 보게 될 내용</span></label>
+            <textarea id="f-desc" placeholder="입력/출력 형식과 조건을 간단히 적어 두세요."></textarea>
+          </div>
+          <div class="field full">
+            <label for="f-reason">왜 틀렸나 <span class="hint">정답 보기 전에는 가려져요</span></label>
+            <textarea id="f-reason" placeholder="예: 점화식을 아래에서 위로 세우지 못함. 인덱스 범위 실수."></textarea>
+          </div>
+          <div class="field">
+            <label for="f-mycode">내가 제출했던 코드 <span class="hint">선택</span></label>
+            <textarea id="f-mycode" class="mono" spellcheck="false"></textarea>
+          </div>
+          <div class="field">
+            <label for="f-solution">정답 코드 <span class="hint">선택</span></label>
+            <textarea id="f-solution" class="mono" spellcheck="false"></textarea>
+          </div>
+          <div class="field full">
+            <label>테스트 케이스 <span class="hint">입력과 기대 출력. 복습할 때 자동 채점에 쓰여요.</span></label>
+            <div id="tc-list"></div>
+            <button type="button" class="btn small" id="btn-add-tc">케이스 추가</button>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" id="btn-cancel-edit" hidden>편집 취소</button>
+          <button type="submit" class="btn primary" id="btn-save">문제 저장</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section class="view" id="view-list">
+    <div class="sheet">
+      <div class="list-tools">
+        <input type="search" id="list-search" placeholder="이름, 태그, 메모로 검색" aria-label="문제 검색">
+        <select class="mode" id="list-sort" aria-label="정렬">
+          <option value="recent">최근 추가순</option>
+          <option value="weak">정답률 낮은순</option>
+          <option value="stale">오래 안 본 순</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>문제</th><th>태그</th><th>복습</th><th>정답률</th><th>마지막 복습</th><th></th></tr></thead>
+        <tbody id="list-body"></tbody>
+      </table></div>
+      <div class="backup">
+        <p style="margin:0 0 8px">기록은 로그인한 계정에 저장돼요. 예전 HTML 파일에서 내보낸 JSON도 여기서 불러올 수 있어요.</p>
+        <div class="row">
+          <button class="btn small" id="btn-export">JSON으로 내보내기</button>
+          <button class="btn small" id="btn-import">JSON 불러오기</button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+/* ============ Firebase 설정: 콘솔에서 복사한 값으로 바꾸세요 ============ */
+const firebaseConfig = {
+    apiKey: "AIzaSyD8msDWt_ihmqjr7WOOoku4M6x5WILYDHo",
+    authDomain: "algo-re-site-f0087.firebaseapp.com",
+    projectId: "algo-re-site-f0087",
+    storageBucket: "algo-re-site-f0087.firebasestorage.app",
+    messagingSenderId: "415920708966",
+    appId: "1:415920708966:web:675030d67bc8d7547cbca7"
+  };
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ============ Storage ============ */
+// 문제와 복습 기록은 Firestore(users/{uid}/problems/{id})에 저장, 작성 중인 코드 초안만 이 기기에 저장
+const DRAFT_KEY = 'algo-review-drafts-v1';
+let problems = [];
+let drafts = {};
+let fdb = null, uid = null, unsubscribe = null, firstSnapshot = true;
+try { drafts = JSON.parse(localStorage.getItem(DRAFT_KEY)) || {}; } catch { drafts = {}; }
+function saveDrafts() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); } catch {} }
+const clean = o => JSON.parse(JSON.stringify(o)); // Firestore는 undefined를 거부함
+const probRef = id => doc(fdb, 'users', uid, 'problems', id);
+function setSync(state) {
+  const el = $('#sync'); el.className = 'sync ' + state;
+  el.querySelector('.txt').textContent = state === 'pending' ? '저장 중…' : state === 'offline' ? '저장 실패' : '동기화됨';
+}
+function writeErr(e) { console.error(e); setSync('offline'); toast('서버에 저장하지 못했어요. 연결과 Firestore 규칙을 확인하세요.'); }
+function saveProblem(p) { setSync('pending'); setDoc(probRef(p.id), clean(p)).then(() => setSync('ok'), writeErr); }
+function removeProblem(id) { setSync('pending'); deleteDoc(probRef(id)).then(() => setSync('ok'), writeErr); }
+async function saveMany(list) {
+  setSync('pending');
+  try {
+    for (let i = 0; i < list.length; i += 400) {
+      const b = writeBatch(fdb);
+      list.slice(i, i + 400).forEach(p => b.set(probRef(p.id), clean(p)));
+      await b.commit();
+    }
+    setSync('ok');
+  } catch (e) { writeErr(e); }
+}
+
+/* ============ Utils ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const dayOf = ts => { const d = new Date(ts); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+function daysSince(ts) { if (!ts) return null; return Math.floor((Date.now() - ts) / 86400000); }
+function relDay(ts) {
+  if (!ts) return '아직 없음';
+  const d = daysSince(ts);
+  if (dayOf(ts) === todayStr()) return '오늘';
+  if (d <= 1) return '어제';
+  return d + '일 전';
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function statsOf(p) {
+  const r = p.reviews || [];
+  const ok = r.filter(x => x.result === 'ok').length;
+  let streak = 0;
+  for (let i = r.length - 1; i >= 0 && r[i].result === 'ok'; i--) streak++;
+  const last = r.length ? r[r.length - 1].at : null;
+  return { total: r.length, ok, rate: r.length ? ok / r.length : null, streak, last };
+}
+function normalizeOut(s) {
+  return String(s ?? '').replace(/\r\n/g, '\n').split('\n').map(l => l.replace(/\s+$/, '')).join('\n').replace(/\n+$/, '');
+}
+
+/* ============ Tabs ============ */
+function showView(name) {
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === name ? 'true' : 'false'));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  if (name === 'list') renderList();
+  if (name === 'review') renderStats();
+}
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.view === 'add' && editingId) resetForm();
+  showView(b.dataset.view);
+}));
+
+/* ============ Python runner (Pyodide in a Web Worker) ============ */
+const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+const PYODIDE_URL = PYODIDE_BASE + 'pyodide.js';
+const RUNNER_PY = `
+import sys, io, traceback, time
+def __run(code, stdin):
+    out, err = io.StringIO(), io.StringIO()
+    old = (sys.stdin, sys.stdout, sys.stderr)
+    sys.stdin, sys.stdout, sys.stderr = io.StringIO(stdin), out, err
+    t = time.perf_counter()
+    try:
+        exec(compile(code, "solution.py", "exec"), {"__name__": "__main__"})
+    except SystemExit:
+        pass
+    except BaseException:
+        etype, evalue, tb = sys.exc_info()
+        tb = tb.tb_next if tb is not None else tb
+        traceback.print_exception(etype, evalue, tb)
+    finally:
+        el = time.perf_counter() - t
+        sys.stdin, sys.stdout, sys.stderr = old
+    return [out.getvalue(), err.getvalue(), el]
+`;
+const WORKER_SRC = `
+importScripts(${JSON.stringify(PYODIDE_URL)});
+let py;
+const ready = loadPyodide({ indexURL: ${JSON.stringify(PYODIDE_BASE)} }).then(p => { py = p; py.runPython(${JSON.stringify(RUNNER_PY)}); postMessage({ type: 'ready' }); })
+  .catch(e => postMessage({ type: 'loaderror', error: String(e) }));
+onmessage = async (e) => {
+  await ready;
+  const { id, code, inputs } = e.data;
+  const run = py.globals.get('__run');
+  const results = [];
+  for (const stdin of inputs) {
+    const r = run(code, stdin);
+    const [out, err, el] = r.toJs(); r.destroy();
+    results.push({ out, err, time: el });
+  }
+  run.destroy();
+  postMessage({ type: 'result', id, results });
+};
+`;
+
+const Py = {
+  worker: null, mode: null, ready: false, pending: null, mainPy: null, timeoutMs: 10000,
+  setStatus(state, text) {
+    const el = $('#py-status'); if (!el) return;
+    el.className = 'py-status ' + state; el.querySelector('.txt').textContent = text;
+  },
+  statusNow() {
+    if (this.ready) return ['ready', 'Python 준비됨'];
+    if (this.mode === 'failed') return ['error', 'Python을 불러오지 못함'];
+    return ['loading', 'Python 불러오는 중… (처음 한 번 몇 초 걸려요)'];
+  },
+  refreshStatus() { const [s, t] = this.statusNow(); this.setStatus(s, t); updateRunButtons(); },
+  init() {
+    this.ready = false; this.refreshStatus();
+    try {
+      const blob = new Blob([WORKER_SRC], { type: 'text/javascript' });
+      this.worker = new Worker(URL.createObjectURL(blob));
+      this.mode = 'worker';
+      this.worker.onmessage = (e) => this.onMsg(e.data);
+      this.worker.onerror = (e) => { e.preventDefault(); if (!this.ready) this.fallback(); };
+    } catch (e) { this.fallback(); }
+  },
+  onMsg(m) {
+    if (m.type === 'ready') { this.ready = true; this.refreshStatus(); }
+    else if (m.type === 'loaderror') { this.fallback(); }
+    else if (m.type === 'result' && this.pending && this.pending.id === m.id) {
+      clearTimeout(this.pending.timer); const p = this.pending; this.pending = null; p.resolve(m.results);
+    }
+  },
+  async fallback() {
+    // Worker unavailable: run Pyodide on the main thread (no timeout protection)
+    if (this.mode === 'main' || this.mode === 'failed') return;
+    if (this.worker) { this.worker.terminate(); this.worker = null; }
+    this.mode = 'main'; this.ready = false; this.refreshStatus();
+    try {
+      if (!window.loadPyodide) await new Promise((res, rej) => {
+        const s = document.createElement('script'); s.src = PYODIDE_URL; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+      });
+      this.mainPy = await loadPyodide({ indexURL: PYODIDE_BASE });
+      this.mainPy.runPython(RUNNER_PY);
+      this.ready = true; this.refreshStatus();
+    } catch (e) {
+      this.mode = 'failed'; this.refreshStatus();
+      toast('Python을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.');
+    }
+  },
+  run(code, inputs) {
+    if (!this.ready) return Promise.reject(new Error('Python이 아직 준비되지 않았어요.'));
+    if (this.mode === 'main') {
+      const run = this.mainPy.globals.get('__run');
+      const results = inputs.map(stdin => { const r = run(code, stdin); const [out, err, el] = r.toJs(); r.destroy(); return { out, err, time: el }; });
+      run.destroy();
+      return Promise.resolve(results);
+    }
+    return new Promise((resolve, reject) => {
+      const id = newId();
+      const limit = this.timeoutMs * Math.max(1, inputs.length);
+      const timer = setTimeout(() => {
+        this.pending = null;
+        this.worker.terminate(); this.worker = null; this.mode = null;
+        this.init(); // restart a fresh interpreter
+        reject(new Error('TIMEOUT'));
+      }, limit);
+      this.pending = { id, resolve, reject, timer };
+      this.worker.postMessage({ id, code, inputs });
+    });
+  }
+};
+
+/* ============ Review ============ */
+let current = null;
+let running = false;
+
+function renderStats() {
+  const today = todayStr();
+  const reviewedToday = problems.filter(p => (p.reviews || []).some(r => dayOf(r.at) === today)).length;
+  const days = new Set(problems.flatMap(p => (p.reviews || []).map(r => dayOf(r.at))));
+  let streak = 0; const d = new Date();
+  if (!days.has(today)) d.setDate(d.getDate() - 1);
+  while (days.has(dayOf(d.getTime()))) { streak++; d.setDate(d.getDate() - 1); }
+  $('#stats').innerHTML = problems.length
+    ? `<span><b>${problems.length}</b>문제 저장됨</span><span><b>${reviewedToday}</b>문제 오늘 복습</span><span><b>${streak}</b>일 연속 복습</span>`
+    : '';
+  const tags = [...new Set(problems.flatMap(p => p.tags || []))].sort();
+  $('#tag-options').innerHTML = tags.map(t => `<option value="${esc(t)}">`).join('');
+}
+
+function pickProblem() {
+  const today = todayStr();
+  const tag = $('#tag-filter').value.trim().toLowerCase();
+  let pool = problems.slice();
+  if (tag) pool = pool.filter(p => (p.tags || []).some(t => t.toLowerCase().includes(tag)));
+  const tagPool = pool;
+  if ($('#skip-today').checked) pool = pool.filter(p => !(p.reviews || []).some(r => dayOf(r.at) === today));
+  if (current && pool.length > 1) pool = pool.filter(p => p.id !== current.id);
+  if (!pool.length) return { none: true, tagEmpty: tagPool.length === 0 };
+  if ($('#draw-mode').value === 'random') return { p: pool[Math.floor(Math.random() * pool.length)] };
+  // weighted: long unseen + low success + short success streak -> higher chance
+  const weights = pool.map(p => {
+    const s = statsOf(p);
+    const since = s.last ? daysSince(s.last) : 14;
+    const failRate = s.rate === null ? 1 : 1 - s.rate;
+    return (1 + Math.min(since, 30)) * (0.5 + failRate) / (1 + s.streak * 1.5);
+  });
+  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r <= 0) return { p: pool[i] }; }
+  return { p: pool[pool.length - 1] };
+}
+
+function draw() {
+  if (!problems.length) { renderReviewEmpty(); return; }
+  const res = pickProblem();
+  if (res.none) {
+    $('#review-area').innerHTML = `<div class="sheet empty"><h2>${res.tagEmpty ? '이 태그가 달린 문제가 없어요' : '오늘 복습할 문제를 다 풀었어요'}</h2>
+      <p>${res.tagEmpty ? '태그 필터를 비우거나 다른 태그를 입력하세요.' : '“오늘 복습한 문제 제외”를 끄면 한 번 더 풀 수 있어요.'}</p></div>`;
+    current = null; return;
+  }
+  current = res.p;
+  renderReview();
+}
+
+function renderReviewEmpty() {
+  $('#review-area').innerHTML = `<div class="sheet empty">
+    <h2>아직 저장된 문제가 없어요</h2>
+    <p>오늘 틀린 문제를 하나 추가하면 여기서 다시 풀 수 있어요.</p>
+    <button class="btn primary" id="btn-empty-add">틀린 문제 추가</button></div>`;
+  $('#btn-empty-add').onclick = () => showView('add');
+}
+
+function renderReview() {
+  const p = current;
+  const s = statsOf(p);
+  const tcs = (p.tests || []).filter(t => t.input.trim() || t.output.trim());
+  const code = drafts[p.id] ?? '';
+  const hist = (p.reviews || []).slice(-20).map(r => `<span class="dot ${r.result}" title="${dayOf(r.at)} ${r.result === 'ok' ? '풀었음' : '막힘'}"></span>`).join('');
+  $('#review-area').innerHTML = `
+  <div class="review-grid">
+    <article class="sheet">
+      <h2 class="problem-title">${esc(p.title)}</h2>
+      <div class="meta">
+        ${p.difficulty ? `<span class="chip diff">${esc(p.difficulty)}</span>` : ''}
+        ${(p.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}
+        ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">문제 페이지 열기</a>` : ''}
+      </div>
+      ${p.description ? `<p class="desc">${esc(p.description)}</p>` : `<p class="muted">문제 요약이 없어요. 링크에서 문제를 확인하세요.</p>`}
+      <div class="history">${s.total ? `복습 ${s.total}회, 정답률 ${Math.round(s.rate * 100)}% &nbsp;${hist}` : '처음 복습하는 문제예요.'}</div>
+      <details class="reveal" id="reveal">
+        <summary>틀린 이유와 정답 보기</summary>
+        ${p.reason ? `<div class="note-red">${esc(p.reason)}</div>` : '<p class="muted">틀린 이유 메모가 없어요.</p>'}
+        ${p.myCode ? `<h3>그때 제출한 코드</h3><pre class="code">${esc(p.myCode)}</pre>` : ''}
+        ${p.solution ? `<h3>정답 코드</h3><pre class="code">${esc(p.solution)}</pre>
+          <button class="btn small" id="btn-load-solution">정답 코드를 편집기로 가져오기</button>` : ''}
+      </details>
+      <div class="grade">
+        <p>이번 복습 결과를 기록하세요</p>
+        <div class="row">
+          <button class="btn ok" id="btn-ok">이번엔 풀었어요</button>
+          <button class="btn bad" id="btn-fail">또 막혔어요</button>
+          <button class="btn" id="btn-edit-cur">문제 수정</button>
+        </div>
+      </div>
+    </article>
+    <section class="sheet">
+      <div class="editor-head">
+        <span class="py-status" id="py-status"><span class="lamp"></span><span class="txt"></span></span>
+        <div class="row">
+          <button class="btn small" id="btn-clear">지우기</button>
+          <button class="btn small" id="btn-run" title="Ctrl + Enter">실행</button>
+          <button class="btn small primary" id="btn-judge" ${tcs.length ? '' : 'disabled title="저장된 테스트 케이스가 없어요"'}>테스트 ${tcs.length}개 채점</button>
+        </div>
+      </div>
+      <div class="editor-wrap">
+        <div class="gutter" id="gutter" aria-hidden="true">1</div>
+        <textarea class="code" id="editor" spellcheck="false" aria-label="Python 코드 편집기" placeholder="# 기억을 더듬어 다시 풀어 보세요&#10;import sys&#10;input = sys.stdin.readline&#10;">${esc(code)}</textarea>
+      </div>
+      <p class="muted" style="margin:6px 0 0;font-size:12.5px"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 실행 · <kbd>Tab</kbd> 들여쓰기 · <kbd>Shift</kbd>+<kbd>Tab</kbd> 내어쓰기 · 작성 중인 코드는 자동 저장돼요</p>
+      <div class="io-grid">
+        <div><label for="stdin">입력 (stdin)</label><textarea class="io" id="stdin" spellcheck="false">${esc(tcs[0]?.input ?? '')}</textarea></div>
+        <div><label>출력</label><pre class="out" id="stdout"></pre></div>
+      </div>
+      <div class="tc-results" id="tc-results"></div>
+    </section>
+  </div>`;
+  Py.refreshStatus();
+  bindEditor($('#editor'), $('#gutter'));
+  $('#editor').addEventListener('input', () => { drafts[p.id] = $('#editor').value; saveDrafts(); });
+  $('#btn-run').onclick = runOnce;
+  $('#btn-judge').onclick = judge;
+  $('#btn-clear').onclick = () => { if (!$('#editor').value || confirm('작성한 코드를 지울까요?')) { $('#editor').value = ''; drafts[p.id] = ''; saveDrafts(); updateGutter($('#editor'), $('#gutter')); } };
+  $('#btn-ok').onclick = () => grade('ok');
+  $('#btn-fail').onclick = () => grade('fail');
+  $('#btn-edit-cur').onclick = () => startEdit(p.id);
+  const ls = $('#btn-load-solution');
+  if (ls) ls.onclick = () => {
+    if ($('#editor').value.trim() && !confirm('편집기의 코드를 정답 코드로 바꿀까요?')) return;
+    $('#editor').value = p.solution; drafts[p.id] = p.solution; saveDrafts(); updateGutter($('#editor'), $('#gutter'));
+  };
+}
+
+function updateRunButtons() {
+  const dis = !Py.ready || running;
+  const r = $('#btn-run'), j = $('#btn-judge');
+  if (r) r.disabled = dis;
+  if (j && current) j.disabled = dis || !(current.tests || []).some(t => t.input.trim() || t.output.trim());
+}
+
+async function runOnce() {
+  if (!Py.ready || running) return;
+  const out = $('#stdout');
+  running = true; updateRunButtons(); out.textContent = '실행 중…';
+  try {
+    const [r] = await Py.run($('#editor').value, [$('#stdin').value]);
+    out.innerHTML = esc(r.out) + (r.err ? `<span class="err">${esc(r.err)}</span>` : '') +
+      `\n<span style="opacity:.6">— ${(r.time * 1000).toFixed(0)}ms</span>`;
+  } catch (e) {
+    out.innerHTML = `<span class="err">${e.message === 'TIMEOUT' ? `시간 초과: ${Py.timeoutMs / 1000}초 안에 끝나지 않아 중단했어요. 무한 루프나 입력 대기를 확인하세요.` : esc(e.message)}</span>`;
+  } finally { running = false; updateRunButtons(); }
+}
+
+async function judge() {
+  if (!Py.ready || running) return;
+  const tcs = (current.tests || []).filter(t => t.input.trim() || t.output.trim());
+  const box = $('#tc-results');
+  running = true; updateRunButtons(); box.innerHTML = '<div class="muted">채점 중…</div>';
+  try {
+    const results = await Py.run($('#editor').value, tcs.map(t => t.input));
+    let pass = 0;
+    box.innerHTML = results.map((r, i) => {
+      const ok = !r.err && normalizeOut(r.out) === normalizeOut(tcs[i].output);
+      if (ok) pass++;
+      return `<details class="tc ${ok ? 'pass' : 'fail'}" ${ok ? '' : 'open'}>
+        <summary>케이스 ${i + 1}: ${ok ? '통과' : (r.err ? '에러' : '오답')} <span class="muted">(${(r.time * 1000).toFixed(0)}ms)</span></summary>
+        <div class="cmp">
+          <div><b>입력</b><pre>${esc(tcs[i].input)}</pre></div>
+          <div><b>기대 출력</b><pre>${esc(tcs[i].output)}</pre></div>
+          <div><b>내 출력</b><pre>${esc(r.out)}${r.err ? `<span style="color:var(--redpen)">${esc(r.err)}</span>` : ''}</pre></div>
+        </div></details>`;
+    }).join('');
+    box.insertAdjacentHTML('afterbegin', `<div style="font-weight:600;color:${pass === results.length ? 'var(--ok)' : 'var(--redpen)'}">${pass} / ${results.length} 통과</div>`);
+  } catch (e) {
+    box.innerHTML = `<div class="tc fail">${e.message === 'TIMEOUT' ? '시간 초과로 채점을 중단했어요. 무한 루프가 있는지 확인하세요.' : esc(e.message)}</div>`;
+  } finally { running = false; updateRunButtons(); }
+}
+
+function grade(result) {
+  const p = problems.find(x => x.id === current.id); if (!p) return;
+  p.reviews = p.reviews || [];
+  p.reviews.push({ at: Date.now(), result });
+  saveProblem(p); renderStats();
+  toast(result === 'ok' ? '풀었음으로 기록했어요' : '막힘으로 기록했어요. 이 문제는 더 자주 나와요');
+  delete drafts[p.id]; saveDrafts();
+  draw();
+}
+
+/* ============ Editor helpers ============ */
+function updateGutter(ta, gutter) {
+  const n = ta.value.split('\n').length;
+  gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
+  gutter.scrollTop = ta.scrollTop;
+}
+function bindEditor(ta, gutter) {
+  if (gutter) {
+    updateGutter(ta, gutter);
+    ta.addEventListener('input', () => updateGutter(ta, gutter));
+    ta.addEventListener('scroll', () => { gutter.scrollTop = ta.scrollTop; });
+  }
+  ta.addEventListener('keydown', e => {
+    const IND = '    ';
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if (ta.id === 'editor') runOnce(); return; }
+    const { selectionStart: s, selectionEnd: en, value: v } = ta;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ls = v.lastIndexOf('\n', s - 1) + 1;
+      if (s === en && !e.shiftKey) { replaceRange(ta, s, en, IND); return; }
+      const block = v.slice(ls, en);
+      const lines = block.split('\n');
+      const nl = e.shiftKey ? lines.map(l => l.replace(/^( {1,4}|\t)/, '')) : lines.map(l => IND + l);
+      const joined = nl.join('\n');
+      ta.setRangeText(joined, ls, en, 'preserve');
+      ta.selectionStart = s === en ? Math.max(ls, s + (joined.length - block.length)) : ls;
+      ta.selectionEnd = ls + joined.length;
+      ta.dispatchEvent(new Event('input'));
+    } else if (e.key === 'Enter' && !e.isComposing) {
+      const ls = v.lastIndexOf('\n', s - 1) + 1;
+      const line = v.slice(ls, s);
+      let ind = (line.match(/^[ \t]*/) || [''])[0];
+      if (/:\s*(#.*)?$/.test(line)) ind += IND;
+      e.preventDefault();
+      replaceRange(ta, s, en, '\n' + ind);
+    }
+  });
+}
+function replaceRange(ta, s, e, text) {
+  ta.setRangeText(text, s, e, 'end');
+  ta.dispatchEvent(new Event('input'));
+}
+
+/* ============ Add / Edit form ============ */
+let editingId = null;
+function tcRow(input = '', output = '') {
+  const div = document.createElement('div');
+  div.className = 'tc-edit';
+  div.innerHTML = `<textarea placeholder="입력" spellcheck="false" aria-label="테스트 입력">${esc(input)}</textarea>
+    <textarea placeholder="기대 출력" spellcheck="false" aria-label="기대 출력">${esc(output)}</textarea>
+    <button type="button" class="btn small" aria-label="이 케이스 삭제">삭제</button>`;
+  div.querySelector('button').onclick = () => div.remove();
+  $('#tc-list').appendChild(div);
+}
+$('#btn-add-tc').onclick = () => tcRow();
+bindEditor($('#f-mycode')); bindEditor($('#f-solution'));
+
+function resetForm() {
+  editingId = null;
+  $('#problem-form').reset();
+  $('#tc-list').innerHTML = ''; tcRow();
+  $('#form-heading').textContent = '틀린 문제 추가';
+  $('#btn-save').textContent = '문제 저장';
+  $('#btn-cancel-edit').hidden = true;
+}
+function startEdit(id) {
+  const p = problems.find(x => x.id === id); if (!p) return;
+  editingId = id;
+  $('#f-title').value = p.title; $('#f-url').value = p.url || ''; $('#f-diff').value = p.difficulty || '';
+  $('#f-tags').value = (p.tags || []).join(', '); $('#f-desc').value = p.description || ''; $('#f-reason').value = p.reason || '';
+  $('#f-mycode').value = p.myCode || ''; $('#f-solution').value = p.solution || '';
+  $('#tc-list').innerHTML = '';
+  (p.tests && p.tests.length ? p.tests : [{ input: '', output: '' }]).forEach(t => tcRow(t.input, t.output));
+  $('#form-heading').textContent = '문제 수정';
+  $('#btn-save').textContent = '수정 내용 저장';
+  $('#btn-cancel-edit').hidden = false;
+  showView('add');
+}
+$('#btn-cancel-edit').onclick = () => { resetForm(); showView('list'); };
+
+$('#problem-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const tests = [...document.querySelectorAll('#tc-list .tc-edit')].map(d => {
+    const [i, o] = d.querySelectorAll('textarea'); return { input: i.value, output: o.value };
+  }).filter(t => t.input.trim() || t.output.trim());
+  const data = {
+    title: $('#f-title').value.trim(),
+    url: $('#f-url').value.trim(),
+    difficulty: $('#f-diff').value.trim(),
+    tags: $('#f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+    description: $('#f-desc').value,
+    reason: $('#f-reason').value,
+    myCode: $('#f-mycode').value,
+    solution: $('#f-solution').value,
+    tests
+  };
+  if (!data.title) { toast('문제 이름을 입력하세요'); return; }
+  if (editingId) {
+    const p = problems.find(x => x.id === editingId);
+    Object.assign(p, data);
+    if (current && current.id === editingId) current = p;
+    saveProblem(p); toast('수정 내용을 저장했어요');
+    const wasCurrent = current && current.id === editingId;
+    resetForm();
+    if (wasCurrent) { showView('review'); renderReview(); } else showView('list');
+  } else {
+    const np = { id: newId(), createdAt: Date.now(), reviews: [], ...data };
+    problems.push(np); saveProblem(np); toast('문제를 저장했어요');
+    resetForm(); $('#f-title').focus();
+    renderStats();
+    if (!current) draw();
+  }
+});
+
+/* ============ List ============ */
+function renderList() {
+  const q = $('#list-search').value.trim().toLowerCase();
+  let rows = problems.filter(p => !q || [p.title, p.reason, p.description, (p.tags || []).join(' '), p.difficulty].join(' ').toLowerCase().includes(q));
+  const sort = $('#list-sort').value;
+  rows = rows.map(p => ({ p, s: statsOf(p) }));
+  if (sort === 'recent') rows.sort((a, b) => b.p.createdAt - a.p.createdAt);
+  if (sort === 'weak') rows.sort((a, b) => (a.s.rate ?? -1) - (b.s.rate ?? -1));
+  if (sort === 'stale') rows.sort((a, b) => (a.s.last ?? 0) - (b.s.last ?? 0));
+  $('#list-body').innerHTML = rows.length ? rows.map(({ p, s }) => `
+    <tr>
+      <td class="title-cell"><button data-review="${p.id}" title="이 문제 바로 복습">${esc(p.title)}</button>${p.difficulty ? ` <span class="muted" style="font-weight:400">${esc(p.difficulty)}</span>` : ''}</td>
+      <td>${(p.tags || []).map(t => `<span class="chip" style="font-size:12px;margin:0 3px 3px 0;display:inline-block">${esc(t)}</span>`).join('')}</td>
+      <td class="rate">${s.total}회</td>
+      <td class="rate" style="color:${s.rate === null ? 'var(--ink-soft)' : s.rate >= .7 ? 'var(--ok)' : 'var(--redpen)'}">${s.rate === null ? '—' : Math.round(s.rate * 100) + '%'}</td>
+      <td class="rate">${relDay(s.last)}</td>
+      <td style="white-space:nowrap"><button class="btn small" data-edit="${p.id}">수정</button> <button class="btn small bad" data-del="${p.id}">삭제</button></td>
+    </tr>`).join('')
+    : `<tr><td colspan="6" class="muted" style="text-align:center;padding:32px">${problems.length ? '검색 결과가 없어요.' : '저장된 문제가 없어요. “문제 추가” 탭에서 시작하세요.'}</td></tr>`;
+}
+$('#list-search').addEventListener('input', renderList);
+$('#list-sort').addEventListener('change', renderList);
+$('#list-body').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.edit) startEdit(t.dataset.edit);
+  if (t.dataset.del) {
+    const p = problems.find(x => x.id === t.dataset.del);
+    if (confirm(`“${p.title}”을(를) 삭제할까요? 복습 기록도 함께 지워져요.`)) {
+      problems = problems.filter(x => x.id !== p.id); delete drafts[p.id];
+      removeProblem(p.id); saveDrafts(); renderList(); toast('삭제했어요');
+      if (current && current.id === p.id) { current = null; problems.length ? draw() : renderReviewEmpty(); }
+    }
+  }
+  if (t.dataset.review) {
+    current = problems.find(x => x.id === t.dataset.review);
+    showView('review'); renderReview();
+  }
+});
+
+/* ============ Backup ============ */
+$('#btn-export').onclick = () => {
+  const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), problems }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `algo-review-${todayStr()}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('#btn-import').onclick = () => $('#import-file').click();
+$('#import-file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const list = Array.isArray(data) ? data : data.problems;
+    if (!Array.isArray(list)) throw new Error();
+    const ids = new Set(problems.map(p => p.id));
+    const fresh = [];
+    list.forEach(p => { if (p && p.title && !(p.id && ids.has(p.id))) fresh.push({ reviews: [], tests: [], tags: [], createdAt: Date.now(), ...p, id: p.id || newId() }); });
+    const added = fresh.length;
+    problems.push(...fresh); renderList(); renderStats();
+    await saveMany(fresh);
+    toast(`${added}문제를 불러왔어요${list.length - added ? ` (중복 ${list.length - added}개 건너뜀)` : ''}`);
+  } catch { toast('불러오지 못했어요. 이 도구에서 내보낸 JSON 파일인지 확인하세요.'); }
+  e.target.value = '';
+};
+
+/* ============ Boot ============ */
+$('#btn-draw').onclick = draw;
+window.showView = showView;
+resetForm();
+
+function showGate(title, text, extraHtml = '', login = false) {
+  $('#gate').hidden = false; $('main').hidden = true; $('nav').hidden = true; $('#account').hidden = true;
+  $('#gate-title').textContent = title; $('#gate-text').textContent = text;
+  $('#gate-extra').innerHTML = extraHtml; $('#btn-login').hidden = !login;
+}
+function onSnap(snap) {
+  problems = snap.docs.map(d => d.data());
+  renderStats();
+  if ($('#view-list').classList.contains('active')) renderList();
+  if (firstSnapshot) { firstSnapshot = false; problems.length ? draw() : renderReviewEmpty(); return; }
+  if (current) {
+    const fresh = problems.find(p => p.id === current.id);
+    if (fresh) current = fresh;               // 편집기 내용은 그대로 두고 데이터만 갱신
+    else { current = null; problems.length ? draw() : renderReviewEmpty(); }
+  } else if (!problems.length) renderReviewEmpty();
+}
+
+if (!firebaseConfig.apiKey) {
+  showGate('Firebase 설정이 필요해요',
+    'HTML 파일 위쪽의 firebaseConfig에 Firebase 콘솔에서 복사한 값을 붙여 넣은 뒤 다시 여세요.',
+    '<pre>const firebaseConfig = {\n  apiKey: "...",\n  authDomain: "...",\n  projectId: "...",\n  ...\n};</pre>');
+} else {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  fdb = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  const provider = new GoogleAuthProvider();
+  $('#btn-login').onclick = async () => {
+    try { await signInWithPopup(auth, provider); }
+    catch (e) {
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') signInWithRedirect(auth, provider);
+      else if (e.code === 'auth/unauthorized-domain') toast('이 주소가 Firebase 승인된 도메인에 없어요. 콘솔에서 추가하세요.');
+      else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') toast('로그인하지 못했어요: ' + e.code);
+    }
+  };
+  $('#btn-logout').onclick = () => signOut(auth);
+  onAuthStateChanged(auth, user => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    if (!user) {
+      uid = null; problems = []; current = null; firstSnapshot = true;
+      if (location.protocol === 'file:') {
+        showGate('웹 주소로 열어 주세요',
+          'Google 로그인은 파일을 직접 연 상태(file://)에서는 동작하지 않아요. GitHub Pages나 Firebase Hosting에 올린 주소로 여세요.');
+      } else showGate('로그인하고 오답노트 열기', 'Google 계정으로 로그인하면 어느 컴퓨터에서든 같은 기록을 볼 수 있어요.', '', true);
+      return;
+    }
+    uid = user.uid;
+    $('#gate').hidden = true; $('main').hidden = false; $('nav').hidden = false; $('#account').hidden = false;
+    $('#user-email').textContent = user.email || '';
+    $('#review-area').innerHTML = '<div class="sheet empty"><p>기록을 불러오는 중…</p></div>';
+    unsubscribe = onSnapshot(collection(fdb, 'users', uid, 'problems'), onSnap, e => {
+      console.error(e); setSync('offline');
+      toast('기록을 불러오지 못했어요. Firestore 보안 규칙을 확인하세요.');
+    });
+    if (!Py.worker && !Py.ready && Py.mode !== 'main') Py.init();
+  });
+}
+</script>
+</body>
+</html>
