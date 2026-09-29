@@ -115,10 +115,9 @@ select.mode { border: 1px solid var(--line); background: var(--sheet); border-ra
 .dot.ok { background: var(--ok); }
 .dot.fail { background: var(--redpen); }
 
-.ptabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 12px 0 12px; }
-.ptabs button { border: 0; background: transparent; padding: 6px 16px; cursor: pointer; color: var(--ink-soft); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.ptabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-.ptab-body { min-height: 140px; }
+.psec { margin-top: 18px; }
+.psec h3 { font-size: 16px; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--ink); display: inline-block; }
+.psec .desc { margin: 0; }
 details.reveal { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
 details.reveal summary { cursor: pointer; font-weight: 600; }
 .note-red { border-left: 3px solid var(--redpen); padding: 6px 12px; margin: 10px 0; white-space: pre-wrap; background: color-mix(in srgb, var(--redpen) 7%, transparent); border-radius: 0 6px 6px 0; }
@@ -570,13 +569,12 @@ function renderReview() {
     <article class="sheet">
       <h2 class="problem-title">${esc(p.title)}</h2>
       ${p.url ? `<div class="meta"><a href="${esc(p.url)}" target="_blank" rel="noopener">문제 페이지 열기</a></div>` : ''}
-      <div class="ptabs" role="tablist" aria-label="문제 내용">
-        <button role="tab" data-pt="statement" aria-selected="true">문제</button>
-        <button role="tab" data-pt="inputDesc" aria-selected="false">입력</button>
-        <button role="tab" data-pt="outputDesc" aria-selected="false">출력</button>
-      </div>
-      <div class="ptab-body" id="ptab-body" role="tabpanel"></div>
-      <div class="history">${s.total ? `복습 ${s.total}회, 정답률 ${Math.round(s.rate * 100)}% &nbsp;${hist}` : '처음 복습하는 문제예요.'}</div>
+      ${[['문제', p.statement ?? p.description ?? ''], ['입력', p.inputDesc || ''], ['출력', p.outputDesc || '']].map(([h, t]) => `
+      <section class="psec">
+        <h3>${h}</h3>
+        ${t.trim() ? `<p class="desc">${esc(t)}</p>` : `<p class="muted" style="margin:0">적어 둔 내용이 없어요.</p>`}
+      </section>`).join('')}
+      <div class="history" style="margin-top:18px">${s.total ? `복습 ${s.total}회, 정답률 ${Math.round(s.rate * 100)}% &nbsp;${hist}` : '처음 복습하는 문제예요.'}</div>
       <details class="reveal" id="reveal">
         <summary>정답 보기</summary>
         ${p.solution ? `<pre class="code">${esc(p.solution)}</pre>
@@ -612,15 +610,6 @@ function renderReview() {
       <div class="tc-results" id="tc-results"></div>
     </section>
   </div>`;
-  const ptexts = { statement: p.statement ?? p.description ?? '', inputDesc: p.inputDesc || '', outputDesc: p.outputDesc || '' };
-  const showPt = key => {
-    document.querySelectorAll('.ptabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.pt === key ? 'true' : 'false'));
-    const t = ptexts[key];
-    $('#ptab-body').innerHTML = t.trim() ? `<p class="desc">${esc(t)}</p>`
-      : `<p class="muted">${p.url ? '적어 둔 내용이 없어요. 문제 페이지에서 확인하세요.' : '적어 둔 내용이 없어요.'}</p>`;
-  };
-  document.querySelectorAll('.ptabs button').forEach(b => b.onclick = () => showPt(b.dataset.pt));
-  showPt('statement');
   Py.refreshStatus();
   bindEditor($('#editor'), $('#gutter'));
   $('#editor').addEventListener('input', () => { drafts[p.id] = $('#editor').value; saveDrafts(); });
