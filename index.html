@@ -180,6 +180,26 @@ h3 { font-size: 15px; margin: 14px 0 4px; }
 .cm-s-default .cm-operator, .cm-s-default .cm-punctuation { color: var(--ink); }
 .cm-s-default .cm-atom { color: var(--tk-number); }
 .cm-s-default .cm-error { color: var(--redpen); }
+#bg-layer, #bg-dim { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+#bg-layer { background-size: cover; background-position: center; transform: scale(1.04); }
+#bg-dim { background: var(--paper); }
+body:not(.has-bg) #bg-layer, body:not(.has-bg) #bg-dim { display: none; }
+body.has-bg .brand { background: color-mix(in srgb, var(--sheet) 82%, transparent); padding: 8px 14px; border-radius: 10px; }
+body.has-bg .stats { background: color-mix(in srgb, var(--sheet) 82%, transparent); padding: 6px 14px; border-radius: 10px; width: fit-content; }
+body.has-bg label.check { background: color-mix(in srgb, var(--sheet) 82%, transparent); padding: 6px 10px; border-radius: 8px; }
+.bg-wrap { position: relative; }
+.bg-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 290px;
+  background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.bg-panel h4 { margin: 0 0 10px; font-size: 15px; }
+.bg-panel .preview { height: 110px; border-radius: 8px; border: 1px dashed var(--line); background: var(--code-bg) center / cover no-repeat;
+  display: grid; place-items: center; color: var(--ink-soft); font-size: 13px; margin-bottom: 10px; }
+.bg-panel .slider { display: grid; grid-template-columns: 70px 1fr 38px; align-items: center; gap: 8px; font-size: 13px; margin: 8px 0; }
+.bg-panel .slider input { width: 100%; accent-color: var(--ink); }
+.bg-panel .slider output { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.bg-panel .bg-status { font-size: 12.5px; color: var(--ink-soft); margin: 8px 0 0; min-height: 1.2em; }
 .theme-btn { border: 1px solid var(--line); background: var(--sheet); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; font-weight: 500; }
 .editor-wrap { display: flex; border: 1px solid var(--line); border-radius: 8px; background: var(--code-bg); overflow: hidden; }
 .gutter {
@@ -267,6 +287,8 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
 </head>
 <body>
 
+<div id="bg-layer" aria-hidden="true"></div>
+<div id="bg-dim" aria-hidden="true"></div>
 <header>
   <div class="brand">
     <h1><span>알고리즘 오답노트</span></h1>
@@ -276,6 +298,21 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
   <div class="account" id="account" hidden>
     <span class="sync" id="sync"><span class="lamp"></span><span class="txt">동기화됨</span></span>
     <span id="user-email"></span>
+    <div class="bg-wrap">
+      <button class="theme-btn" id="btn-bg" type="button" aria-expanded="false" aria-controls="bg-panel">🖼️ 배경</button>
+      <div class="bg-panel" id="bg-panel" hidden>
+        <h4>배경 화면</h4>
+        <div class="preview" id="bg-preview">선택한 이미지가 없어요</div>
+        <div class="row">
+          <button class="btn small primary" id="btn-bg-pick" type="button">이미지 선택</button>
+          <button class="btn small" id="btn-bg-remove" type="button">배경 제거</button>
+          <input type="file" id="bg-file" accept="image/*" hidden>
+        </div>
+        <label class="slider"><span>선명도</span><input type="range" id="bg-vivid" min="10" max="100" step="5"><output id="bg-vivid-out"></output></label>
+        <label class="slider"><span>흐림</span><input type="range" id="bg-blur" min="0" max="20" step="1"><output id="bg-blur-out"></output></label>
+        <p class="bg-status" id="bg-status">다른 컴퓨터에서도 같은 배경이 보여요.</p>
+      </div>
+    </div>
     <button class="btn small" id="btn-logout">로그아웃</button>
   </div>
   <nav role="tablist" aria-label="화면 전환" hidden>
@@ -891,6 +928,94 @@ $('#list-body').addEventListener('click', e => {
 
 /* ============ Boot ============ */
 $('#btn-draw').onclick = draw;
+
+/* ============ 배경 화면 (계정에 저장: users/{uid}/settings/appearance) ============ */
+const BG_CACHE = 'algo-bg-cache-v1';
+let bg = { image: '', vivid: 60, blur: 0 };
+let unsubBg = null, bgSaveTimer = null;
+function applyBg() {
+  const has = !!bg.image;
+  document.body.classList.toggle('has-bg', has);
+  $('#bg-layer').style.backgroundImage = has ? `url("${bg.image}")` : '';
+  $('#bg-layer').style.filter = bg.blur ? `blur(${bg.blur}px)` : '';
+  $('#bg-dim').style.opacity = String(1 - bg.vivid / 100);
+  $('#bg-preview').style.backgroundImage = has ? `url("${bg.image}")` : '';
+  $('#bg-preview').textContent = has ? '' : '선택한 이미지가 없어요';
+  $('#bg-vivid').value = bg.vivid; $('#bg-vivid-out').textContent = bg.vivid + '%';
+  $('#bg-blur').value = bg.blur; $('#bg-blur-out').textContent = bg.blur + 'px';
+  $('#btn-bg-remove').disabled = !has;
+  try { localStorage.setItem(BG_CACHE, JSON.stringify(bg)); } catch {}
+}
+try { const c = JSON.parse(localStorage.getItem(BG_CACHE)); if (c) bg = { ...bg, ...c }; } catch {}
+applyBg();
+
+function bgStatus(t) { $('#bg-status').textContent = t; }
+function saveBg(fields) {
+  if (!uid) return;
+  bgStatus('저장 중…');
+  setDoc(doc(fdb, 'users', uid, 'settings', 'appearance'), fields, { merge: true })
+    .then(() => bgStatus('저장했어요. 다른 컴퓨터에서도 같은 배경이 보여요.'),
+          e => { console.error(e); bgStatus('저장하지 못했어요. 연결을 확인하세요.'); });
+}
+// Firestore 문서 한 개는 1MB가 한도라서, 이미지를 줄이고 JPEG로 압축해 약 850KB 이하로 맞춤
+async function compressImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    let maxSide = 2000;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      for (const q of [0.85, 0.75, 0.65, 0.55]) {
+        const data = c.toDataURL('image/jpeg', q);
+        if (data.length < 850000) return data;
+      }
+      maxSide = Math.round(maxSide * 0.75);
+    }
+    throw new Error('too big');
+  } finally { URL.revokeObjectURL(url); }
+}
+function toggleBgPanel(open) {
+  const panel = $('#bg-panel');
+  const next = open ?? panel.hidden;
+  panel.hidden = !next;
+  $('#btn-bg').setAttribute('aria-expanded', String(next));
+}
+$('#btn-bg').onclick = e => { e.stopPropagation(); toggleBgPanel(); };
+$('#bg-panel').addEventListener('click', e => e.stopPropagation());
+document.addEventListener('click', () => toggleBgPanel(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleBgPanel(false); });
+$('#btn-bg-pick').onclick = () => $('#bg-file').click();
+$('#bg-file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { bgStatus('이미지 파일만 쓸 수 있어요.'); return; }
+  bgStatus('이미지를 줄이는 중…');
+  try {
+    const data = await compressImage(f);
+    bg.image = data; applyBg(); saveBg({ image: data, vivid: bg.vivid, blur: bg.blur });
+  } catch { bgStatus('이 이미지는 쓸 수 없어요. 다른 이미지를 골라 보세요.'); }
+};
+$('#btn-bg-remove').onclick = () => { bg.image = ''; applyBg(); saveBg({ image: '' }); };
+['vivid', 'blur'].forEach(k => {
+  $('#bg-' + k).addEventListener('input', e => {
+    bg[k] = Number(e.target.value); applyBg();
+    clearTimeout(bgSaveTimer); bgSaveTimer = setTimeout(() => saveBg({ vivid: bg.vivid, blur: bg.blur }), 500);
+  });
+});
+function watchBg() {
+  if (unsubBg) unsubBg();
+  unsubBg = onSnapshot(doc(fdb, 'users', uid, 'settings', 'appearance'), snap => {
+    if (snap.metadata.hasPendingWrites) return; // 내가 방금 바꾼 값은 이미 화면에 반영됨
+    const d = snap.data();
+    bg = { image: d?.image || '', vivid: d?.vivid ?? 60, blur: d?.blur ?? 0 };
+    applyBg();
+  }, e => console.error(e));
+}
 function paintThemeBtn() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   $('#btn-theme').textContent = dark ? '☀️ 라이트 모드' : '🌙 다크 모드';
@@ -947,8 +1072,10 @@ if (!firebaseConfig.apiKey) {
   $('#btn-logout').onclick = () => signOut(auth);
   onAuthStateChanged(auth, user => {
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    if (unsubBg) { unsubBg(); unsubBg = null; }
     if (!user) {
       uid = null; problems = []; current = null; firstSnapshot = true;
+      toggleBgPanel(false);
       if (location.protocol === 'file:') {
         showGate('웹 주소로 열어 주세요',
           'Google 로그인은 파일을 직접 연 상태(file://)에서는 동작하지 않아요. GitHub Pages나 Firebase Hosting에 올린 주소로 여세요.');
@@ -963,6 +1090,7 @@ if (!firebaseConfig.apiKey) {
       console.error(e); setSync('offline');
       toast('기록을 불러오지 못했어요. Firestore 보안 규칙을 확인하세요.');
     });
+    watchBg();
     if (!Py.worker && !Py.ready && Py.mode !== 'main') Py.init();
   });
 }
