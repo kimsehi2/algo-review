@@ -115,6 +115,10 @@ select.mode { border: 1px solid var(--line); background: var(--sheet); border-ra
 .dot.ok { background: var(--ok); }
 .dot.fail { background: var(--redpen); }
 
+.ptabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 12px 0 12px; }
+.ptabs button { border: 0; background: transparent; padding: 6px 16px; cursor: pointer; color: var(--ink-soft); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.ptabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.ptab-body { min-height: 140px; }
 details.reveal { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 12px; }
 details.reveal summary { cursor: pointer; font-weight: 600; }
 .note-red { border-left: 3px solid var(--redpen); padding: 6px 12px; margin: 10px 0; white-space: pre-wrap; background: color-mix(in srgb, var(--redpen) 7%, transparent); border-radius: 0 6px 6px 0; }
@@ -194,7 +198,6 @@ td.title-cell button { all: unset; cursor: pointer; }
 td.title-cell button:hover { text-decoration: underline; }
 td.title-cell button:focus-visible { outline: 2px solid var(--focus); }
 .rate { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.backup { margin-top: 20px; font-size: 14px; color: var(--ink-soft); }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0;
@@ -249,14 +252,8 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
     <div class="drawbar">
       <div class="row">
         <button class="draw-btn" id="btn-draw">문제 뽑기</button>
-        <select class="mode" id="draw-mode" aria-label="뽑는 방식">
-          <option value="smart">약한 문제 우선</option>
-          <option value="random">완전 랜덤</option>
-        </select>
         <label class="check"><input type="checkbox" id="skip-today" checked> 오늘 복습한 문제 제외</label>
       </div>
-      <input id="tag-filter" list="tag-options" placeholder="태그로 좁히기 (예: DP)" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--sheet);min-width:200px">
-      <datalist id="tag-options"></datalist>
     </div>
     <div id="review-area"></div>
   </section>
@@ -271,37 +268,24 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
             <label for="f-title">문제 이름</label>
             <input id="f-title" required placeholder="예: 백준 1932 정수 삼각형">
           </div>
-          <div class="field">
+          <div class="field full">
             <label for="f-url">문제 링크 <span class="hint">선택</span></label>
             <input id="f-url" type="url" placeholder="https://www.acmicpc.net/problem/1932">
           </div>
-          <div class="field">
-            <label for="f-diff">난이도 <span class="hint">선택</span></label>
-            <input id="f-diff" list="diff-options" placeholder="예: 실버 1, Lv.2, Medium">
-            <datalist id="diff-options">
-              <option value="브론즈"><option value="실버"><option value="골드"><option value="플래티넘">
-              <option value="Lv.1"><option value="Lv.2"><option value="Lv.3"><option value="Lv.4">
-              <option value="D3"><option value="D4"><option value="Easy"><option value="Medium"><option value="Hard">
-            </datalist>
-          </div>
           <div class="field full">
-            <label for="f-tags">태그 <span class="hint">쉼표로 구분</span></label>
-            <input id="f-tags" placeholder="DP, 그리디, BFS">
-          </div>
-          <div class="field full">
-            <label for="f-desc">문제 요약 <span class="hint">복습할 때 보게 될 내용</span></label>
-            <textarea id="f-desc" placeholder="입력/출력 형식과 조건을 간단히 적어 두세요."></textarea>
-          </div>
-          <div class="field full">
-            <label for="f-reason">왜 틀렸나 <span class="hint">정답 보기 전에는 가려져요</span></label>
-            <textarea id="f-reason" placeholder="예: 점화식을 아래에서 위로 세우지 못함. 인덱스 범위 실수."></textarea>
+            <label for="f-statement">문제</label>
+            <textarea id="f-statement" style="min-height:140px" placeholder="문제 설명을 붙여 넣으세요."></textarea>
           </div>
           <div class="field">
-            <label for="f-mycode">내가 제출했던 코드 <span class="hint">선택</span></label>
-            <textarea id="f-mycode" class="mono" spellcheck="false"></textarea>
+            <label for="f-input">입력</label>
+            <textarea id="f-input" placeholder="입력 형식과 조건"></textarea>
           </div>
           <div class="field">
-            <label for="f-solution">정답 코드 <span class="hint">선택</span></label>
+            <label for="f-output">출력</label>
+            <textarea id="f-output" placeholder="출력 형식"></textarea>
+          </div>
+          <div class="field full">
+            <label for="f-solution">정답 코드 <span class="hint">선택. 복습할 때 "정답 보기"에 나와요.</span></label>
             <textarea id="f-solution" class="mono" spellcheck="false"></textarea>
           </div>
           <div class="field full">
@@ -322,7 +306,7 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
   <section class="view" id="view-list">
     <div class="sheet">
       <div class="list-tools">
-        <input type="search" id="list-search" placeholder="이름, 태그, 메모로 검색" aria-label="문제 검색">
+        <input type="search" id="list-search" placeholder="문제 이름이나 내용으로 검색" aria-label="문제 검색">
         <select class="mode" id="list-sort" aria-label="정렬">
           <option value="recent">최근 추가순</option>
           <option value="weak">정답률 낮은순</option>
@@ -330,17 +314,9 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
         </select>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>문제</th><th>태그</th><th>복습</th><th>정답률</th><th>마지막 복습</th><th></th></tr></thead>
+        <thead><tr><th>문제</th><th>복습</th><th>정답률</th><th>마지막 복습</th><th></th></tr></thead>
         <tbody id="list-body"></tbody>
       </table></div>
-      <div class="backup">
-        <p style="margin:0 0 8px">기록은 로그인한 계정에 저장돼요. 예전 HTML 파일에서 내보낸 JSON도 여기서 불러올 수 있어요.</p>
-        <div class="row">
-          <button class="btn small" id="btn-export">JSON으로 내보내기</button>
-          <button class="btn small" id="btn-import">JSON 불러오기</button>
-          <input type="file" id="import-file" accept="application/json,.json" hidden>
-        </div>
-      </div>
     </div>
   </section>
 </main>
@@ -350,19 +326,19 @@ kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); 
 <script type="module">
 /* ============ Firebase 설정: 콘솔에서 복사한 값으로 바꾸세요 ============ */
 const firebaseConfig = {
-    apiKey: "AIzaSyD8msDWt_ihmqjr7WOOoku4M6x5WILYDHo",
-    authDomain: "algo-re-site-f0087.firebaseapp.com",
-    projectId: "algo-re-site-f0087",
-    storageBucket: "algo-re-site-f0087.firebasestorage.app",
-    messagingSenderId: "415920708966",
-    appId: "1:415920708966:web:675030d67bc8d7547cbca7"
-  };
+  apiKey: "AIzaSyD8msDWt_ihmqjr7WOOoku4M6x5WILYDHo",
+  authDomain: "algo-re-site-f0087.firebaseapp.com",
+  projectId: "algo-re-site-f0087",
+  storageBucket: "algo-re-site-f0087.firebasestorage.app",
+  messagingSenderId: "415920708966",
+  appId: "1:415920708966:web:675030d67bc8d7547cbca7"
+};
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch }
+  collection, doc, setDoc, deleteDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============ Storage ============ */
@@ -382,17 +358,6 @@ function setSync(state) {
 function writeErr(e) { console.error(e); setSync('offline'); toast('서버에 저장하지 못했어요. 연결과 Firestore 규칙을 확인하세요.'); }
 function saveProblem(p) { setSync('pending'); setDoc(probRef(p.id), clean(p)).then(() => setSync('ok'), writeErr); }
 function removeProblem(id) { setSync('pending'); deleteDoc(probRef(id)).then(() => setSync('ok'), writeErr); }
-async function saveMany(list) {
-  setSync('pending');
-  try {
-    for (let i = 0; i < list.length; i += 400) {
-      const b = writeBatch(fdb);
-      list.slice(i, i + 400).forEach(p => b.set(probRef(p.id), clean(p)));
-      await b.commit();
-    }
-    setSync('ok');
-  } catch (e) { writeErr(e); }
-}
 
 /* ============ Utils ============ */
 const $ = s => document.querySelector(s);
@@ -563,38 +528,23 @@ function renderStats() {
   $('#stats').innerHTML = problems.length
     ? `<span><b>${problems.length}</b>문제 저장됨</span><span><b>${reviewedToday}</b>문제 오늘 복습</span><span><b>${streak}</b>일 연속 복습</span>`
     : '';
-  const tags = [...new Set(problems.flatMap(p => p.tags || []))].sort();
-  $('#tag-options').innerHTML = tags.map(t => `<option value="${esc(t)}">`).join('');
 }
 
 function pickProblem() {
   const today = todayStr();
-  const tag = $('#tag-filter').value.trim().toLowerCase();
   let pool = problems.slice();
-  if (tag) pool = pool.filter(p => (p.tags || []).some(t => t.toLowerCase().includes(tag)));
-  const tagPool = pool;
   if ($('#skip-today').checked) pool = pool.filter(p => !(p.reviews || []).some(r => dayOf(r.at) === today));
   if (current && pool.length > 1) pool = pool.filter(p => p.id !== current.id);
-  if (!pool.length) return { none: true, tagEmpty: tagPool.length === 0 };
-  if ($('#draw-mode').value === 'random') return { p: pool[Math.floor(Math.random() * pool.length)] };
-  // weighted: long unseen + low success + short success streak -> higher chance
-  const weights = pool.map(p => {
-    const s = statsOf(p);
-    const since = s.last ? daysSince(s.last) : 14;
-    const failRate = s.rate === null ? 1 : 1 - s.rate;
-    return (1 + Math.min(since, 30)) * (0.5 + failRate) / (1 + s.streak * 1.5);
-  });
-  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r <= 0) return { p: pool[i] }; }
-  return { p: pool[pool.length - 1] };
+  if (!pool.length) return { none: true };
+  return { p: pool[Math.floor(Math.random() * pool.length)] };
 }
 
 function draw() {
   if (!problems.length) { renderReviewEmpty(); return; }
   const res = pickProblem();
   if (res.none) {
-    $('#review-area').innerHTML = `<div class="sheet empty"><h2>${res.tagEmpty ? '이 태그가 달린 문제가 없어요' : '오늘 복습할 문제를 다 풀었어요'}</h2>
-      <p>${res.tagEmpty ? '태그 필터를 비우거나 다른 태그를 입력하세요.' : '“오늘 복습한 문제 제외”를 끄면 한 번 더 풀 수 있어요.'}</p></div>`;
+    $('#review-area').innerHTML = `<div class="sheet empty"><h2>오늘 복습할 문제를 다 풀었어요</h2>
+      <p>“오늘 복습한 문제 제외”를 끄면 한 번 더 풀 수 있어요.</p></div>`;
     current = null; return;
   }
   current = res.p;
@@ -619,19 +569,18 @@ function renderReview() {
   <div class="review-grid">
     <article class="sheet">
       <h2 class="problem-title">${esc(p.title)}</h2>
-      <div class="meta">
-        ${p.difficulty ? `<span class="chip diff">${esc(p.difficulty)}</span>` : ''}
-        ${(p.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}
-        ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">문제 페이지 열기</a>` : ''}
+      ${p.url ? `<div class="meta"><a href="${esc(p.url)}" target="_blank" rel="noopener">문제 페이지 열기</a></div>` : ''}
+      <div class="ptabs" role="tablist" aria-label="문제 내용">
+        <button role="tab" data-pt="statement" aria-selected="true">문제</button>
+        <button role="tab" data-pt="inputDesc" aria-selected="false">입력</button>
+        <button role="tab" data-pt="outputDesc" aria-selected="false">출력</button>
       </div>
-      ${p.description ? `<p class="desc">${esc(p.description)}</p>` : `<p class="muted">문제 요약이 없어요. 링크에서 문제를 확인하세요.</p>`}
+      <div class="ptab-body" id="ptab-body" role="tabpanel"></div>
       <div class="history">${s.total ? `복습 ${s.total}회, 정답률 ${Math.round(s.rate * 100)}% &nbsp;${hist}` : '처음 복습하는 문제예요.'}</div>
       <details class="reveal" id="reveal">
-        <summary>틀린 이유와 정답 보기</summary>
-        ${p.reason ? `<div class="note-red">${esc(p.reason)}</div>` : '<p class="muted">틀린 이유 메모가 없어요.</p>'}
-        ${p.myCode ? `<h3>그때 제출한 코드</h3><pre class="code">${esc(p.myCode)}</pre>` : ''}
-        ${p.solution ? `<h3>정답 코드</h3><pre class="code">${esc(p.solution)}</pre>
-          <button class="btn small" id="btn-load-solution">정답 코드를 편집기로 가져오기</button>` : ''}
+        <summary>정답 보기</summary>
+        ${p.solution ? `<pre class="code">${esc(p.solution)}</pre>
+          <button class="btn small" id="btn-load-solution">정답 코드를 편집기로 가져오기</button>` : '<p class="muted">저장된 정답 코드가 없어요. “문제 수정”에서 추가할 수 있어요.</p>'}
       </details>
       <div class="grade">
         <p>이번 복습 결과를 기록하세요</p>
@@ -663,6 +612,15 @@ function renderReview() {
       <div class="tc-results" id="tc-results"></div>
     </section>
   </div>`;
+  const ptexts = { statement: p.statement ?? p.description ?? '', inputDesc: p.inputDesc || '', outputDesc: p.outputDesc || '' };
+  const showPt = key => {
+    document.querySelectorAll('.ptabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.pt === key ? 'true' : 'false'));
+    const t = ptexts[key];
+    $('#ptab-body').innerHTML = t.trim() ? `<p class="desc">${esc(t)}</p>`
+      : `<p class="muted">${p.url ? '적어 둔 내용이 없어요. 문제 페이지에서 확인하세요.' : '적어 둔 내용이 없어요.'}</p>`;
+  };
+  document.querySelectorAll('.ptabs button').forEach(b => b.onclick = () => showPt(b.dataset.pt));
+  showPt('statement');
   Py.refreshStatus();
   bindEditor($('#editor'), $('#gutter'));
   $('#editor').addEventListener('input', () => { drafts[p.id] = $('#editor').value; saveDrafts(); });
@@ -789,7 +747,7 @@ function tcRow(input = '', output = '') {
   $('#tc-list').appendChild(div);
 }
 $('#btn-add-tc').onclick = () => tcRow();
-bindEditor($('#f-mycode')); bindEditor($('#f-solution'));
+bindEditor($('#f-solution'));
 
 function resetForm() {
   editingId = null;
@@ -802,9 +760,9 @@ function resetForm() {
 function startEdit(id) {
   const p = problems.find(x => x.id === id); if (!p) return;
   editingId = id;
-  $('#f-title').value = p.title; $('#f-url').value = p.url || ''; $('#f-diff').value = p.difficulty || '';
-  $('#f-tags').value = (p.tags || []).join(', '); $('#f-desc').value = p.description || ''; $('#f-reason').value = p.reason || '';
-  $('#f-mycode').value = p.myCode || ''; $('#f-solution').value = p.solution || '';
+  $('#f-title').value = p.title; $('#f-url').value = p.url || '';
+  $('#f-statement').value = p.statement ?? p.description ?? ''; $('#f-input').value = p.inputDesc || ''; $('#f-output').value = p.outputDesc || '';
+  $('#f-solution').value = p.solution || '';
   $('#tc-list').innerHTML = '';
   (p.tests && p.tests.length ? p.tests : [{ input: '', output: '' }]).forEach(t => tcRow(t.input, t.output));
   $('#form-heading').textContent = '문제 수정';
@@ -822,11 +780,9 @@ $('#problem-form').addEventListener('submit', e => {
   const data = {
     title: $('#f-title').value.trim(),
     url: $('#f-url').value.trim(),
-    difficulty: $('#f-diff').value.trim(),
-    tags: $('#f-tags').value.split(',').map(t => t.trim()).filter(Boolean),
-    description: $('#f-desc').value,
-    reason: $('#f-reason').value,
-    myCode: $('#f-mycode').value,
+    statement: $('#f-statement').value,
+    inputDesc: $('#f-input').value,
+    outputDesc: $('#f-output').value,
     solution: $('#f-solution').value,
     tests
   };
@@ -851,7 +807,7 @@ $('#problem-form').addEventListener('submit', e => {
 /* ============ List ============ */
 function renderList() {
   const q = $('#list-search').value.trim().toLowerCase();
-  let rows = problems.filter(p => !q || [p.title, p.reason, p.description, (p.tags || []).join(' '), p.difficulty].join(' ').toLowerCase().includes(q));
+  let rows = problems.filter(p => !q || [p.title, p.statement, p.description, p.inputDesc, p.outputDesc].join(' ').toLowerCase().includes(q));
   const sort = $('#list-sort').value;
   rows = rows.map(p => ({ p, s: statsOf(p) }));
   if (sort === 'recent') rows.sort((a, b) => b.p.createdAt - a.p.createdAt);
@@ -859,14 +815,13 @@ function renderList() {
   if (sort === 'stale') rows.sort((a, b) => (a.s.last ?? 0) - (b.s.last ?? 0));
   $('#list-body').innerHTML = rows.length ? rows.map(({ p, s }) => `
     <tr>
-      <td class="title-cell"><button data-review="${p.id}" title="이 문제 바로 복습">${esc(p.title)}</button>${p.difficulty ? ` <span class="muted" style="font-weight:400">${esc(p.difficulty)}</span>` : ''}</td>
-      <td>${(p.tags || []).map(t => `<span class="chip" style="font-size:12px;margin:0 3px 3px 0;display:inline-block">${esc(t)}</span>`).join('')}</td>
+      <td class="title-cell"><button data-review="${p.id}" title="이 문제 바로 복습">${esc(p.title)}</button></td>
       <td class="rate">${s.total}회</td>
       <td class="rate" style="color:${s.rate === null ? 'var(--ink-soft)' : s.rate >= .7 ? 'var(--ok)' : 'var(--redpen)'}">${s.rate === null ? '—' : Math.round(s.rate * 100) + '%'}</td>
       <td class="rate">${relDay(s.last)}</td>
       <td style="white-space:nowrap"><button class="btn small" data-edit="${p.id}">수정</button> <button class="btn small bad" data-del="${p.id}">삭제</button></td>
     </tr>`).join('')
-    : `<tr><td colspan="6" class="muted" style="text-align:center;padding:32px">${problems.length ? '검색 결과가 없어요.' : '저장된 문제가 없어요. “문제 추가” 탭에서 시작하세요.'}</td></tr>`;
+    : `<tr><td colspan="5" class="muted" style="text-align:center;padding:32px">${problems.length ? '검색 결과가 없어요.' : '저장된 문제가 없어요. “문제 추가” 탭에서 시작하세요.'}</td></tr>`;
 }
 $('#list-search').addEventListener('input', renderList);
 $('#list-sort').addEventListener('change', renderList);
@@ -887,30 +842,6 @@ $('#list-body').addEventListener('click', e => {
   }
 });
 
-/* ============ Backup ============ */
-$('#btn-export').onclick = () => {
-  const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), problems }, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `algo-review-${todayStr()}.json`; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-$('#btn-import').onclick = () => $('#import-file').click();
-$('#import-file').onchange = async e => {
-  const f = e.target.files[0]; if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    const list = Array.isArray(data) ? data : data.problems;
-    if (!Array.isArray(list)) throw new Error();
-    const ids = new Set(problems.map(p => p.id));
-    const fresh = [];
-    list.forEach(p => { if (p && p.title && !(p.id && ids.has(p.id))) fresh.push({ reviews: [], tests: [], tags: [], createdAt: Date.now(), ...p, id: p.id || newId() }); });
-    const added = fresh.length;
-    problems.push(...fresh); renderList(); renderStats();
-    await saveMany(fresh);
-    toast(`${added}문제를 불러왔어요${list.length - added ? ` (중복 ${list.length - added}개 건너뜀)` : ''}`);
-  } catch { toast('불러오지 못했어요. 이 도구에서 내보낸 JSON 파일인지 확인하세요.'); }
-  e.target.value = '';
-};
 
 /* ============ Boot ============ */
 $('#btn-draw').onclick = draw;
