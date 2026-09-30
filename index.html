@@ -418,7 +418,6 @@ const firebaseConfig = {
   appId: "1:415920708966:web:675030d67bc8d7547cbca7"
 };
 
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -686,7 +685,7 @@ function renderReview() {
         </div>
       </div>
       <div id="editor-host"></div>
-      <p class="muted" style="margin:6px 0 0;font-size:12.5px"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 실행 · <kbd>Tab</kbd> 들여쓰기 · <kbd>Shift</kbd>+<kbd>Tab</kbd> 내어쓰기 · 작성 중인 코드는 자동 저장돼요</p>
+      <p class="muted" style="margin:6px 0 0;font-size:12.5px"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 실행 · <kbd>Tab</kbd> 들여쓰기 · <kbd>Shift</kbd>+<kbd>Tab</kbd> 내어쓰기 · <kbd>Ctrl</kbd>+<kbd>/</kbd> 주석 · 작성 중인 코드는 자동 저장돼요</p>
       <div class="io-grid">
         <div><label for="stdin">입력 (stdin)</label><textarea class="io" id="stdin" spellcheck="false">${esc(tcs[0]?.input ?? '')}</textarea></div>
         <div><label>출력</label><pre class="out" id="stdout"></pre></div>
@@ -707,6 +706,12 @@ function renderReview() {
     }
   });
   cm.getInputField().setAttribute('aria-label', 'Python 코드 편집기');
+  // Ctrl+/ (Mac: Cmd+/) 주석 토글. 한글 입력 상태에서도 동작하도록 물리 키(Slash)로 판별
+  cm.on('keydown', (c, e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.code === 'Slash' || e.key === '/' || e.keyCode === 191)) {
+      e.preventDefault(); toggleLineComment(c);
+    }
+  });
   cm.on('change', () => { drafts[p.id] = cm.getValue(); saveDrafts(); });
   $('#btn-run').onclick = runOnce;
   $('#btn-judge').onclick = judge;
@@ -777,6 +782,28 @@ function grade(result) {
 }
 
 /* ============ Editor helpers ============ */
+function toggleLineComment(c) {
+  c.operation(() => {
+    const lines = new Set();
+    c.listSelections().forEach(r => {
+      const from = r.from(), to = r.to();
+      const end = (to.ch === 0 && to.line > from.line) ? to.line - 1 : to.line;
+      for (let l = from.line; l <= end; l++) lines.add(l);
+    });
+    const ls = [...lines].sort((a, b) => a - b).filter(l => c.getLine(l).trim() !== '');
+    if (!ls.length) return;
+    const allCommented = ls.every(l => /^\s*#/.test(c.getLine(l)));
+    if (allCommented) {
+      ls.forEach(l => {
+        const m = c.getLine(l).match(/^(\s*)# ?/);
+        c.replaceRange('', { line: l, ch: m[1].length }, { line: l, ch: m[0].length });
+      });
+    } else {
+      const ind = Math.min(...ls.map(l => c.getLine(l).match(/^\s*/)[0].length));
+      ls.forEach(l => c.replaceRange('# ', { line: l, ch: ind }));
+    }
+  });
+}
 function updateGutter(ta, gutter) {
   const n = ta.value.split('\n').length;
   gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
